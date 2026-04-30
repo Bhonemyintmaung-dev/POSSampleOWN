@@ -13,6 +13,8 @@ public class SaleDTO
 
     public decimal TotalPrice { get; set; }
 
+    public string TotalPriceFormatted { get; set; } = string.Empty;
+
     public string VoucherCode { get; set; } = null!;
 
     public List<SaleItemDTO> SaleItems { get; set; } = new List<SaleItemDTO>();
@@ -24,6 +26,9 @@ public class SaleItemDTO
     public int Quantity { get; set; }
 
     public decimal Price { get; set; }
+
+    public string PriceFormatted { get; set; } = string.Empty;
+
 }
 
 public class CreateSaleDTO

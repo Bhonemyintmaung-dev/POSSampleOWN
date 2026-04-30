@@ -30,21 +30,17 @@ namespace POSSampleOWN.Controllers
 
         // GET: api/sales
         [HttpGet]
-        public IActionResult GetAll()
+        public async Task<IActionResult> GetAll()
         {
-            var result = _service.GetAllSales();
+            var result =await  _service.GetAllSalesAsync();
             return Ok(result);
         }
 
         // GET: api/sales/{id}
         [HttpGet("{id}")]
-        public IActionResult GetByVoucherCode(string voucherCode)
+        public async Task<IActionResult> GetByVoucherCode(string voucherCode)
         {
-            var result = _service.GetSaleByVouncherCode(voucherCode);
-            if (!result.IsSuccess)
-            {
-                return NotFound(result);
-            }
+            var result = await _service.GetSaleByVoucherCodeAsync(voucherCode);
             return Ok(result);
         }
 
