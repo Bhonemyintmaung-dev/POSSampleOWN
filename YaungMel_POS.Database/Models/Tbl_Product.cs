@@ -34,6 +34,8 @@ public class Tbl_Product
 
     public bool DeleteFlag { get; set; } = false;
 
+    public uint xmin { get; set; }
+
     public int CategoryId { get; set; }
 
     [ForeignKey("CategoryId")]

@@ -38,7 +38,7 @@ namespace YaungMel_POS.domain.Features.ProductsCatalog
 
                 var products = await _db.Products
                     .AsNoTracking()
-                    .OrderByDescending(p => p.Id) 
+                    .OrderByDescending(p => p.Id)
                     .Skip((pageNo - 1) * pageSize)
                     .Take(pageSize)
                     .Select(p => new ProductDTO
@@ -51,6 +51,7 @@ namespace YaungMel_POS.domain.Features.ProductsCatalog
                         CategoryId = p.CategoryId,
                         DeleteFlag = p.DeleteFlag,
                         IsActive = p.IsActive,
+                        Version = p.xmin,
                     })
                     .ToListAsync();
 
@@ -88,7 +89,8 @@ namespace YaungMel_POS.domain.Features.ProductsCatalog
                     StockQuantity = product.StockQuantity,
                     CategoryId = product.CategoryId,
                     IsActive = product.IsActive,
-                    DeleteFlag= product.DeleteFlag
+                    DeleteFlag = product.DeleteFlag,
+                    Version = product.xmin
                 };
 
                 return ApiResponse<ProductDTO>.Success(data);
@@ -116,7 +118,8 @@ namespace YaungMel_POS.domain.Features.ProductsCatalog
                         StockQuantity = p.StockQuantity,
                         CategoryId = p.CategoryId,
                         IsActive = p.IsActive,
-                        DeleteFlag= p.DeleteFlag
+                        DeleteFlag = p.DeleteFlag,
+                        Version = p.xmin
                     })
                     .ToListAsync();
 
@@ -170,7 +173,8 @@ namespace YaungMel_POS.domain.Features.ProductsCatalog
                     StockQuantity = newProduct.StockQuantity,
                     CategoryId = newProduct.CategoryId,
                     DeleteFlag = newProduct.DeleteFlag,
-                    IsActive = newProduct.IsActive
+                    IsActive = newProduct.IsActive,
+                    Version = newProduct.xmin
                 };
 
                 return ApiResponse<ProductDTO>.Success(data, "Product created successfully.");
@@ -212,7 +216,8 @@ namespace YaungMel_POS.domain.Features.ProductsCatalog
                     StockQuantity = p.StockQuantity,
                     CategoryId = p.CategoryId,
                     DeleteFlag = p.DeleteFlag,
-                    IsActive = p.IsActive
+                    IsActive = p.IsActive,
+                    Version = p.xmin
                 }).ToList();
 
                 return ApiResponse<List<ProductDTO>>.Success(data, $"{data.Count} products created successfully.");
@@ -234,8 +239,11 @@ namespace YaungMel_POS.domain.Features.ProductsCatalog
                 if (product is null || product.DeleteFlag == true)
                     return ApiResponse<ProductDTO>.Fail("Product not found");
 
+                // Set the RowVersion from the client request so EF Core can detect concurrent modifications
+                _db.Entry(product).Property(p => p.xmin).OriginalValue = request.Version;
+
                 if (!string.IsNullOrWhiteSpace(request.Name))
-                { 
+                {
                     var isDuplicate = await _db.Products.AnyAsync(p =>
                         p.Id != id &&
                         !p.DeleteFlag &&
@@ -272,10 +280,15 @@ namespace YaungMel_POS.domain.Features.ProductsCatalog
                     Description = product.Description,
                     Price = product.Price,
                     StockQuantity = product.StockQuantity,
-                    CategoryId = product.CategoryId
+                    CategoryId = product.CategoryId,
+                    Version = product.xmin
                 };
 
                 return ApiResponse<ProductDTO>.Success(data, "Product updated successfully.");
+            }
+            catch (DbUpdateConcurrencyException)
+            {
+                return ApiResponse<ProductDTO>.Fail("The product was modified by another user. Please refresh and try again.");
             }
             catch (Exception ex)
             {
@@ -285,13 +298,16 @@ namespace YaungMel_POS.domain.Features.ProductsCatalog
         #endregion
 
         #region delete product
-        public async Task<ApiResponse<bool>> DeleteProductAsync(int id, int userId)
+        public async Task<ApiResponse<bool>> DeleteProductAsync(int id, uint version, int userId)
         {
             try
             {
                 var product = await _db.Products.FirstOrDefaultAsync(p => p.Id == id);
 
-                if (product is null) return ApiResponse<bool>.Fail("Product not found");
+                if (product is null || product.DeleteFlag)
+                    return ApiResponse<bool>.Fail("Product not found");
+
+                _db.Entry(product).Property(p => p.xmin).OriginalValue = version;
 
                 product.DeleteFlag = true;
                 product.IsActive = false;
@@ -301,6 +317,10 @@ namespace YaungMel_POS.domain.Features.ProductsCatalog
                 await _db.SaveChangesAsync();
 
                 return ApiResponse<bool>.Success(true, "Product deleted successfully.");
+            }
+            catch (DbUpdateConcurrencyException)
+            {
+                return ApiResponse<bool>.Fail("The product was modified by another user. Please refresh and try again.");
             }
             catch (Exception ex)
             {

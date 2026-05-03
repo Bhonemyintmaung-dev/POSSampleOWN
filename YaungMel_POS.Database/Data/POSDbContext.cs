@@ -44,6 +44,13 @@ public class POSDbContext: DbContext
             .WithMany()
             .HasForeignKey(p => p.UpdatedBy);
 
+        modelBuilder.Entity<Tbl_Product>()
+            .Property(p => p.xmin)
+            .HasColumnName("xmin")
+            .HasColumnType("xid")
+            .ValueGeneratedOnAddOrUpdate()
+            .IsConcurrencyToken();
+
         //map Tbl_category to Tbl_user
         modelBuilder.Entity<Tbl_Category>()
             .HasOne(p => p.CreatedUser)

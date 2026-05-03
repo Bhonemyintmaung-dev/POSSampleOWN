@@ -13,7 +13,7 @@ namespace YaungMel_POS.domain.Features.ProductsCatalog
 
         Task<ApiResponse<List<ProductDTO>>> BulkCreateProductsAsync(List<CreateProductDTO> request, int userId);
         Task<ApiResponse<ProductDTO>> UpdateProductAsync(int id, UpdateProductDTO request, int userId);
-        Task<ApiResponse<bool>> DeleteProductAsync(int id, int userId);
+        Task<ApiResponse<bool>> DeleteProductAsync(int id, uint version, int userId);
         Task<ApiResponse<List<ProductDTO>>> GetProductsByTermAsync(string term);
 
         Task<ApiResponse<CategoryDTO>> GetCategoryByIdAsync(int id);

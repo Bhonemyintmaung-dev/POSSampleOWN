@@ -12,6 +12,7 @@ public class ProductDTO
     public int CategoryId { get; set; }
     public bool DeleteFlag { get; set; }
     public bool IsActive { get; set; }
+    public uint Version { get; set; }
 }
 
 public class CreateProductDTO
@@ -35,7 +36,6 @@ public class CreateProductDTO
 
 public class UpdateProductDTO
 {
-
     [MaxLength(150)]
     public string? Name { get; set; }
     [MaxLength(500)]
@@ -44,7 +44,11 @@ public class UpdateProductDTO
     public int? StockQuantity { get; set; }
     public int? CategoryId { get; set; }
 
-    // public int UpdatedBy { get; set; }
+    /// <summary>
+    /// Must be supplied by the client (from a previous GET/list response) to detect concurrent update conflicts.
+    /// </summary>
+    [Required]
+    public uint Version { get; set; }
 }
 public class ProductListResponseDTO
 {

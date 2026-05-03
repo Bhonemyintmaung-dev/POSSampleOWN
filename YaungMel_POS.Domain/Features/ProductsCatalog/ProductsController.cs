@@ -112,12 +112,12 @@ namespace YaungMel_POS.domain.Features.ProductsCatalog
         // DELETE: api/products/{id}
         [Authorize(Roles = "Admin")]
         [HttpDelete("{id}")]
-        public async Task<IActionResult> Delete(int id)
+        public async Task<IActionResult> Delete(int id, [FromQuery] uint version)
         {
             if (!ModelState.IsValid)
                 return BadRequest(ApiResponse<object>.Fail("Invalid product ID."));
 
-            var result = await _service.DeleteProductAsync(id, GetCurrentUserId());
+            var result = await _service.DeleteProductAsync(id, version, GetCurrentUserId());
 
             if (!result.IsSuccess)
                 return result.Message.Contains("not found") ? NotFound(result) : BadRequest(result);
