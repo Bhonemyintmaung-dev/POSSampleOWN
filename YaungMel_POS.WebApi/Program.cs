@@ -9,6 +9,7 @@ using Serilog;
 using System.Text;
 using YaungMel_POS.Database.Data;
 using YaungMel_POS.Domain.Features;
+using YaungMel_POS.Domain.Features.Summary;
 using YaungMel_POS.Domain.Middlewares;
 using YaungMel_POS.WebApi;
 
@@ -98,8 +99,15 @@ try
     });
 
 
+    builder.Services.AddHangfire(config =>
+    {
+        config.UsePostgreSqlStorage(options =>
+        {
+            options.UseNpgsqlConnection(builder.Configuration.GetConnectionString("HangfireConnection"));
+        });
+    });
 
-    builder.Services.AddHangfireServer();
+    //builder.Services.AddHangfireServer();
 
     var app = builder.Build();
 
@@ -119,14 +127,19 @@ try
         app.MapScalarApiReference();
     }
 
-
+   
     app.UseHttpsRedirection();
     app.UseCors("AllowAll");
     app.UseAuthentication();
     app.UseMiddleware<Middleware>();
     app.UseAuthorization();
-
     app.MapControllers();
+
+    //app.UseHangfireDashboard("/hangfire");
+    //RecurringJob.AddOrUpdate<ISummaryService>(
+    //"create-daily-summary",
+    //service => service.CreateSummaryAsync(),
+    //"59 23 * * *");
 
     app.Run();
 }
