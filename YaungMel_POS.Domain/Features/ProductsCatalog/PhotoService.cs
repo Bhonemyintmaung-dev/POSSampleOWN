@@ -45,6 +45,7 @@ namespace YaungMel_POS.Domain.Features.ProductsCatalog
                 var uploadParams = new ImageUploadParams
                 {
                     File = new FileDescription(fileName, photoStream),
+                    Transformation = new Transformation().Height(500).Width(500).Crop("fill").Gravity("face"),
                     Folder = "yaungmel_pos_product_photos"
                 };
 
