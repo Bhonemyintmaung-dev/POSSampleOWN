@@ -1,4 +1,4 @@
-using DinkToPdf;
+﻿using DinkToPdf;
 using DinkToPdf.Contracts;
 using System;
 using System.Collections.Generic;
@@ -204,7 +204,7 @@ namespace YaungMel_POS.Domain.Features.Report
                     sb.Append($"<td class='col-total'>{(item.Price * item.Quantity):N0}</td>");
                     sb.Append("</tr>");
                 }
-                
+
                 // Subtotal for the voucher
                 sb.Append($@"
                 <tr>
