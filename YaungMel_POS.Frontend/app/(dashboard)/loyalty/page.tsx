@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { useAuth } from "@/lib/auth-context";
 import { pointsApi } from "@/lib/api";
-import type { AvailableRewardResDTO, AccountLookupResponse, ClaimRewardResDTO } from "@/lib/types";
+import type { AvailableRewardResDTO, AccountLookupResponse, ClaimRewardResDTO, AccountItemDTO, AccountListResponseWrapper } from "@/lib/types";
 import { Card, CardHeader } from "@/components/ui/Card";
 import { Input } from "@/components/ui/Input";
 import { Button } from "@/components/ui/Button";
@@ -12,7 +12,7 @@ import { Modal } from "@/components/ui/Modal";
 import { SkeletonTable } from "@/components/ui/Skeleton";
 import { AnimatedPage } from "@/components/ui/AnimatedPage";
 import { toast } from "@/components/ui/Toast";
-import { Gift, Search as SearchIcon, UserCheck, Coins, Package, CheckCircle, Shield, AlertTriangle, ArrowRight } from "lucide-react";
+import { Gift, Search as SearchIcon, UserCheck, Coins, Package, CheckCircle, Shield, AlertTriangle, ArrowRight, Users, LayoutGrid, List, ChevronLeft, ChevronRight, Mail, Phone, Calendar } from "lucide-react";
 
 export default function LoyaltyPage() {
   const { isAdmin, isStaff } = useAuth();
@@ -29,6 +29,14 @@ export default function LoyaltyPage() {
   const [claimResult, setClaimResult] = useState<ClaimRewardResDTO | null>(null);
   const [notes, setNotes] = useState("");
 
+  // Accounts List state
+  const [activeTab, setActiveTab] = useState<"claim" | "accounts">("claim");
+  const [accountsData, setAccountsData] = useState<AccountListResponseWrapper | null>(null);
+  const [accountsLoading, setAccountsLoading] = useState(false);
+  const [accountSearch, setAccountSearch] = useState("");
+  const [accountPage, setAccountPage] = useState(1);
+  const accountPageSize = 8;
+
   useEffect(() => {
     const timer = window.setTimeout(async () => {
       setIsLoading(true);
@@ -43,6 +51,32 @@ export default function LoyaltyPage() {
     }, 0);
     return () => window.clearTimeout(timer);
   }, []);
+
+  // Fetch accounts when tab is "accounts" or search/page changes
+  useEffect(() => {
+    if (activeTab !== "accounts") return;
+
+    const fetchAccounts = async () => {
+      setAccountsLoading(true);
+      try {
+        const res = await pointsApi.getAccounts({
+          page: accountPage,
+          pageSize: accountPageSize,
+          searchTerm: accountSearch,
+        });
+        if (res.isSuccess && res.data) {
+          setAccountsData(res.data);
+        }
+      } catch {
+        toast("error", "Failed to load loyalty accounts");
+      } finally {
+        setAccountsLoading(false);
+      }
+    };
+
+    const timer = setTimeout(fetchAccounts, 300); // Debounce search
+    return () => clearTimeout(timer);
+  }, [activeTab, accountSearch, accountPage]);
 
   const handleLookup = async () => {
     if (!externalId.trim()) {
@@ -112,6 +146,17 @@ export default function LoyaltyPage() {
     setNotes("");
   };
 
+  const handleSelectAccount = (account: AccountItemDTO) => {
+    setExternalId(account.externalUserId);
+    setActiveTab("claim");
+    setStep("search");
+    // Trigger lookup automatically
+    setTimeout(() => {
+      const lookupBtn = document.querySelector('button[icon*="UserCheck"]') as HTMLButtonElement;
+      if (lookupBtn) lookupBtn.click();
+    }, 100);
+  };
+
   if (!isAdmin && !isStaff) {
     return (
       <AnimatedPage>
@@ -127,10 +172,40 @@ export default function LoyaltyPage() {
   return (
     <AnimatedPage>
       <div className="space-y-6">
-        <div>
-          <h2 className="text-2xl font-bold text-[var(--text-primary)]">Reward Claiming</h2>
-          <p className="text-sm text-[var(--text-secondary)] mt-1">Claim rewards for customers using their External User ID.</p>
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+          <div>
+            <h2 className="text-2xl font-bold text-[var(--text-primary)]">Loyalty Program</h2>
+            <p className="text-sm text-[var(--text-secondary)] mt-1">Manage customer rewards and view loyalty accounts.</p>
+          </div>
+          
+          <div className="flex p-1 bg-[var(--bg-secondary)] rounded-xl border border-[var(--border-primary)] w-fit">
+            <button
+              onClick={() => setActiveTab("claim")}
+              className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${
+                activeTab === "claim" 
+                ? "bg-[var(--bg-card)] text-[var(--accent-primary)] shadow-sm border border-[var(--border-primary)]" 
+                : "text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
+              }`}
+            >
+              <Gift size={16} />
+              Claim Rewards
+            </button>
+            <button
+              onClick={() => setActiveTab("accounts")}
+              className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${
+                activeTab === "accounts" 
+                ? "bg-[var(--bg-card)] text-[var(--accent-primary)] shadow-sm border border-[var(--border-primary)]" 
+                : "text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
+              }`}
+            >
+              <Users size={16} />
+              Accounts
+            </button>
+          </div>
         </div>
+
+        {activeTab === "claim" ? (
+          <div className="space-y-6">
 
         {/* Progress Steps */}
         <div className="flex items-center gap-2">
@@ -347,6 +422,178 @@ export default function LoyaltyPage() {
               <Button onClick={handleReset} className="mx-auto" icon={<SearchIcon size={16} />}>Claim Another Reward</Button>
             </div>
           </Card>
+        )}
+          </div>
+        ) : (
+          <div className="space-y-6">
+            {/* Accounts List View */}
+            <Card padding="lg">
+              <CardHeader 
+                title="Loyalty Accounts" 
+                subtitle="View and manage customer loyalty accounts." 
+                action={
+                  <div className="flex items-center gap-3">
+                    <div className="relative w-64 hidden sm:block">
+                      <Input
+                        placeholder="Search accounts..."
+                        value={accountSearch}
+                        onChange={(e) => {
+                          setAccountSearch(e.target.value);
+                          setAccountPage(1);
+                        }}
+                        icon={<SearchIcon size={14} />}
+                        className="py-1.5 text-xs"
+                      />
+                    </div>
+                  </div>
+                } 
+              />
+
+              <div className="sm:hidden mb-4">
+                <Input
+                  placeholder="Search accounts..."
+                  value={accountSearch}
+                  onChange={(e) => {
+                    setAccountSearch(e.target.value);
+                    setAccountPage(1);
+                  }}
+                  icon={<SearchIcon size={14} />}
+                />
+              </div>
+
+              {accountsLoading ? (
+                <SkeletonTable rows={accountPageSize} />
+              ) : !accountsData || accountsData.items.length === 0 ? (
+                <div className="py-20 text-center space-y-3 bg-[var(--bg-secondary)] rounded-2xl border border-dashed border-[var(--border-primary)]">
+                  <div className="w-16 h-16 rounded-full bg-[var(--bg-card)] flex items-center justify-center mx-auto text-[var(--text-tertiary)]">
+                    <Users size={32} />
+                  </div>
+                  <p className="text-[var(--text-secondary)]">No loyalty accounts found.</p>
+                  {accountSearch && (
+                    <Button variant="secondary" size="sm" onClick={() => setAccountSearch("")}>Clear Search</Button>
+                  )}
+                </div>
+              ) : (
+                <div className="overflow-x-auto -mx-6 px-6">
+                  <table className="w-full border-collapse">
+                    <thead>
+                      <tr className="border-b border-[var(--border-primary)]">
+                        <th className="text-left py-4 px-4 text-xs font-semibold text-[var(--text-tertiary)] uppercase tracking-wider">Account ID</th>
+                        <th className="text-left py-4 px-4 text-xs font-semibold text-[var(--text-tertiary)] uppercase tracking-wider">User ID</th>
+                        <th className="text-left py-4 px-4 text-xs font-semibold text-[var(--text-tertiary)] uppercase tracking-wider">Tier</th>
+                        <th className="text-right py-4 px-4 text-xs font-semibold text-[var(--text-tertiary)] uppercase tracking-wider">Balance</th>
+                        <th className="text-left py-4 px-4 text-xs font-semibold text-[var(--text-tertiary)] uppercase tracking-wider">Contact</th>
+                        <th className="text-right py-4 px-4 text-xs font-semibold text-[var(--text-tertiary)] uppercase tracking-wider">Actions</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-[var(--border-primary)] divide-opacity-50">
+                      {accountsData.items.map((account) => (
+                        <tr key={account.id} className="group hover:bg-[var(--bg-secondary)] transition-colors duration-150">
+                          <td className="py-4 px-4">
+                            <span className="text-xs font-mono text-[var(--text-tertiary)]">{account.id.slice(0, 8)}...</span>
+                          </td>
+                          <td className="py-4 px-4">
+                            <div className="flex items-center gap-3">
+                              <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-[var(--accent-primary)] to-blue-500 flex items-center justify-center text-white text-xs font-bold shadow-sm">
+                                {account.externalUserId.charAt(0).toUpperCase()}
+                              </div>
+                              <span className="text-sm font-semibold text-[var(--text-primary)]">{account.externalUserId}</span>
+                            </div>
+                          </td>
+                          <td className="py-4 px-4">
+                            <Badge variant={
+                              account.tier === "Platinum" ? "primary" : 
+                              account.tier === "Gold" ? "warning" : 
+                              account.tier === "Silver" ? "info" : "default"
+                            }>
+                              {account.tier}
+                            </Badge>
+                          </td>
+                          <td className="py-4 px-4 text-right">
+                            <div className="flex flex-col items-end">
+                              <span className="text-sm font-bold text-[var(--accent-warning)]">{account.currentBalance} pts</span>
+                              <span className="text-[10px] text-[var(--text-tertiary)]">Lifetime: {account.lifetimePoints}</span>
+                            </div>
+                          </td>
+                          <td className="py-4 px-4">
+                            <div className="flex flex-col gap-1">
+                              {account.mobile && (
+                                <div className="flex items-center gap-1.5 text-[var(--text-secondary)]">
+                                  <Phone size={10} />
+                                  <span className="text-[11px]">{account.mobile}</span>
+                                </div>
+                              )}
+                              {account.email && (
+                                <div className="flex items-center gap-1.5 text-[var(--text-secondary)]">
+                                  <Mail size={10} />
+                                  <span className="text-[11px] truncate max-w-[120px]">{account.email}</span>
+                                </div>
+                              )}
+                            </div>
+                          </td>
+                          <td className="py-4 px-4 text-right">
+                            <Button 
+                              size="sm" 
+                              variant="secondary"
+                              onClick={() => handleSelectAccount(account)}
+                              className="opacity-0 group-hover:opacity-100 transition-opacity duration-200"
+                              icon={<Gift size={14} />}
+                            >
+                              Claim
+                            </Button>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+
+              {/* Pagination */}
+              {accountsData && accountsData.totalCount > accountPageSize && (
+                <div className="flex items-center justify-between mt-6 pt-6 border-t border-[var(--border-primary)]">
+                  <p className="text-xs text-[var(--text-tertiary)]">
+                    Showing <span className="font-semibold text-[var(--text-secondary)]">{(accountPage - 1) * accountPageSize + 1}</span> to <span className="font-semibold text-[var(--text-secondary)]">{Math.min(accountPage * accountPageSize, accountsData.totalCount)}</span> of <span className="font-semibold text-[var(--text-secondary)]">{accountsData.totalCount}</span> accounts
+                  </p>
+                  <div className="flex items-center gap-2">
+                    <Button
+                      variant="secondary"
+                      size="sm"
+                      onClick={() => setAccountPage(p => Math.max(1, p - 1))}
+                      disabled={accountPage === 1}
+                      icon={<ChevronLeft size={16} />}
+                    >
+                      {""}
+                    </Button>
+                    <div className="flex items-center gap-1">
+                      {Array.from({ length: Math.ceil(accountsData.totalCount / accountPageSize) }).map((_, i) => (
+                        <button
+                          key={i}
+                          onClick={() => setAccountPage(i + 1)}
+                          className={`w-8 h-8 rounded-lg text-xs font-medium transition-all ${
+                            accountPage === i + 1
+                            ? "bg-[var(--accent-primary)] text-white shadow-md"
+                            : "hover:bg-[var(--bg-secondary)] text-[var(--text-secondary)]"
+                          }`}
+                        >
+                          {i + 1}
+                        </button>
+                      ))}
+                    </div>
+                    <Button
+                      variant="secondary"
+                      size="sm"
+                      onClick={() => setAccountPage(p => p + 1)}
+                      disabled={accountPage >= Math.ceil(accountsData.totalCount / accountPageSize)}
+                      icon={<ChevronRight size={16} />}
+                    >
+                      {""}
+                    </Button>
+                  </div>
+                </div>
+              )}
+            </Card>
+          </div>
         )}
       </div>
     </AnimatedPage>
