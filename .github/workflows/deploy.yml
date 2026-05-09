@@ -56,4 +56,4 @@ jobs:
         with:
           huggingface_repo_id: P-Wint/YaungMelPOS-API
           repo_type: space
-          token: ${{ secrets.HF_TOKEN }}
+          hf_token: ${{ secrets.HF_TOKEN }}
