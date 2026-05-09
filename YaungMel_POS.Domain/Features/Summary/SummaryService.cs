@@ -26,7 +26,7 @@ public class SummaryService : ISummaryService
     {
         try
         {
-            var today = DateTime.UtcNow.Date;
+            var targetDate = DateTime.SpecifyKind(date.Date, DateTimeKind.Utc);
             var now = DateTime.UtcNow;
 
             var salesSummary = await _db.Sales
@@ -142,7 +142,7 @@ public class SummaryService : ISummaryService
     {
         try
         {
-            var targetDate = date.Date;
+            var targetDate = DateTime.SpecifyKind(date.Date, DateTimeKind.Utc);
             var nextDate = targetDate.AddDays(1);
 
             var summary = await _db.Summaries
@@ -195,8 +195,8 @@ public class SummaryService : ISummaryService
     {
         try
         {
-            var start = startDate.Date;
-            var end = endDate.Date;
+            var start = DateTime.SpecifyKind(startDate.Date, DateTimeKind.Utc);
+            var end = DateTime.SpecifyKind(endDate.Date, DateTimeKind.Utc);
 
             var summaries = await _db.Summaries
                 .AsNoTracking()
