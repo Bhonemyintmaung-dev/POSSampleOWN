@@ -202,20 +202,20 @@ public static class DatabaseSeeder
             };
 
             var products = new List<Tbl_Product>();
+            int productCount = 0;
 
-            for (int i = 1; i <= 100; i++)
+            foreach (var productName in alcoholProducts)
             {
                 var randomCategory = categoriesList[random.Next(categoriesList.Count)];
-                var randomProduct = alcoholProducts[random.Next(alcoholProducts.Count)];
-                var productImg = sampleImages.FirstOrDefault(x => x.Name == randomProduct);
+                var productImg = sampleImages.FirstOrDefault(x => x.Name == productName);
 
                 products.Add(new Tbl_Product
                 {
-                    Name = $"{randomProduct}",
-                    Description = $"Premium {randomCategory.Name} alcoholic beverage",
+                    Name = productName,
+                    Description = $"Premium {randomCategory.Name} alcoholic beverage - {productName}",
                     ImageUrl = productImg?.Url,
                     ImageId = productImg?.Id,
-                    Price = random.Next(5000, 150000),
+                    Price = random.Next(50, 200) * 1000, // Price ends with 000
                     StockQuantity = random.Next(20, 300),
                     IsActive = true,
                     CategoryId = randomCategory.Id,
@@ -223,6 +223,7 @@ public static class DatabaseSeeder
                     CreatedAt = DateTime.UtcNow,
                     DeleteFlag = false
                 });
+                productCount++;
             }
 
             await db.Products.AddRangeAsync(products);
