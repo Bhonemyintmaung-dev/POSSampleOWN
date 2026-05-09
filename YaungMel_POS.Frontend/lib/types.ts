@@ -47,6 +47,7 @@ export interface ProductDTO {
   name: string;
   description?: string;
   price: number;
+  priceFormatted: string;
   stockQuantity: number;
   categoryId: number;
   categoryName?: string;
@@ -97,12 +98,14 @@ export interface SaleItemDTO {
   productName: string;
   quantity: number;
   price: number;
+  priceFormatted: string;
 }
 
 export interface SaleDTO {
   id: number;
   voucherCode: string;
   totalPrice: number;
+  totalPriceFormatted: string;
   saleItems: SaleItemDTO[];
   createdAt?: string;
 }
@@ -270,4 +273,37 @@ export interface SearchRequestDTO {
   isDescending?: boolean;
   pageNumber?: number;
   pageSize?: number;
+}
+
+export interface SearchCategoryRequestDTO {
+  name?: string;
+  isDescending?: boolean;
+  pageNumber?: number;
+  pageSize?: number;
+}
+
+// ─── Pagination ──────────────────────────────────────────
+export interface PageSettingDTO {
+  pageNo: number;
+  pageSize: number;
+  pageCount: number;
+}
+
+// ─── Summaries ───────────────────────────────────────────
+export interface SummaryDTO {
+  date: string;
+  totalSale: number;
+  totalAmount: number;
+  totalAmountFormatted: string;
+  topSaleProductName?: string;
+}
+
+export interface SummaryListResponseModel {
+  items: SummaryDTO[];
+  pageSetting: PageSettingDTO;
+}
+
+export interface SummaryDetailDto {
+  summary: SummaryDTO;
+  sales: SaleDTO[];
 }

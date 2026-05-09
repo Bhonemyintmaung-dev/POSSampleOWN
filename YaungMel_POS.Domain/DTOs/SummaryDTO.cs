@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -11,6 +11,7 @@ public class SummaryDTO
     public DateTime Date { get; set; }
     public int TotalSale { get; set; }
     public decimal TotalAmount { get; set; }
+    public string TotalAmountFormatted { get; set; } = string.Empty;
     public string? TopSaleProductName { get; set; }
 }
 

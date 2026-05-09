@@ -31,6 +31,10 @@ import type {
   UserResponse,
   CreateRewardReqDTO,
   UpdateRewardReqDTO,
+  SearchCategoryRequestDTO,
+  SummaryDTO,
+  SummaryListResponseModel,
+  SummaryDetailDto,
 } from "./types";
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
@@ -123,7 +127,13 @@ export const productsApi = {
     api.get<ApiResponse<ProductDTO>>(`/api/products/${id}`).then(unwrap),
 
   getAvailable: () =>
-    api.get<ApiResponse<ProductDTO[]>>("/api/products/availableProducts").then(unwrap),
+    api.get<ApiResponse<unknown>>("/api/products/paged?pageNo=1&pageSize=500").then((res) => {
+      const raw = unwrap(res);
+      return {
+        ...raw,
+        data: normalizeProductListData(raw.data),
+      } as ApiResponse<ProductDTO[]>;
+    }),
 
   create: (data: CreateProductDTO) =>
     api.post<ApiResponse<ProductDTO>>("/api/products", data).then(unwrap),
@@ -171,13 +181,16 @@ export const productsApi = {
 // ─── Categories API ───────────────────────────────────────
 export const categoriesApi = {
   getAll: () =>
-    api.get<ApiResponse<unknown>>("/api/categories").then((res) => {
+    api.get<ApiResponse<unknown>>("/api/categories?pageSize=100").then((res) => {
       const raw = unwrap(res);
       return {
         ...raw,
         data: normalizeCategoryListData(raw.data),
       } as ApiResponse<CategoryDTO[]>;
     }),
+  
+  getPaged: (pageNo: number, pageSize: number) =>
+    api.get<ApiResponse<SummaryListResponseModel>>(`/api/categories/paged?pageNo=${pageNo}&pageSize=${pageSize}`).then(unwrap),
 
   getById: (id: number) =>
     api.get<ApiResponse<CategoryDTO>>(`/api/categories/${id}`).then(unwrap),
@@ -256,6 +269,36 @@ export const dashboardApi = {
 export const searchApi = {
   search: (params: SearchRequestDTO) =>
     api.get<ApiResponse<ProductDTO[]>>("/api/search", { params }).then(unwrap),
+
+  searchCategories: (params: SearchCategoryRequestDTO) =>
+    api.get<ApiResponse<CategoryDTO[]>>("/api/search/categories", { params }).then(unwrap),
+};
+
+// ─── Reports API ──────────────────────────────────────────
+export const reportsApi = {
+  generateDaily: (date: string) =>
+    api.get(`/api/reports?date=${date}`, { responseType: "blob" }).then((res) => res.data as Blob),
+
+  generateRange: (startDate: string, endDate: string) =>
+    api.get(`/api/reports/range?startDate=${startDate}&endDate=${endDate}`, { responseType: "blob" }).then((res) => res.data as Blob),
+};
+
+// ─── Summaries API ────────────────────────────────────────
+export const summariesApi = {
+  create: () =>
+    api.post<ApiResponse<SummaryDTO>>("/api/summaries/create").then(unwrap),
+
+  getAll: () =>
+    api.get<ApiResponse<SummaryDTO[]>>("/api/summaries").then(unwrap),
+
+  getPaged: (pageNo: number, pageSize: number) =>
+    api.get<ApiResponse<SummaryListResponseModel>>(`/api/summaries/paged?pageNo=${pageNo}&pageSize=${pageSize}`).then(unwrap),
+
+  getByDate: (date: string) =>
+    api.get<ApiResponse<SummaryDetailDto>>(`/api/summaries/by-date?date=${date}`).then(unwrap),
+
+  getByDateRange: (startDate: string, endDate: string) =>
+    api.get<ApiResponse<SummaryDTO[]>>(`/api/summaries/by-date-range?startDate=${startDate}&endDate=${endDate}`).then(unwrap),
 };
 
 // ─── Points / Loyalty API ─────────────────────────────────

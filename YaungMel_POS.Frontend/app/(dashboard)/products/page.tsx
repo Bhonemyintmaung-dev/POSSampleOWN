@@ -197,7 +197,7 @@ export default function ProductsPage() {
                         </div>
                       </td>
                       <td className="py-3 px-4"><Badge variant="info">{getCategoryName(p.categoryId)}</Badge></td>
-                      <td className="py-3 px-4"><span className="text-sm font-mono font-medium text-[var(--text-primary)]">MMK{p.price.toFixed(2)}</span></td>
+                      <td className="py-3 px-4"><span className="text-sm font-mono font-medium text-[var(--text-primary)]">{p.priceFormatted} MMK</span></td>
                       <td className="py-3 px-4">{stockBadge(p.stockQuantity)}</td>
                       <td className="py-3 px-4"><Badge variant={p.isActive ? "success" : "danger"}>{p.isActive ? "Active" : "Inactive"}</Badge></td>
                       <td className="py-3 px-4 text-right">

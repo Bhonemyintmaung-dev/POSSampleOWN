@@ -23,21 +23,20 @@ export default function POSPage() {
   const [filterCat, setFilterCat] = useState<number | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [checkoutLoading, setCheckoutLoading] = useState(false);
-  const [showReceipt, setShowReceipt] = useState<{ voucherCode: string; total: number } | null>(null);
+  const [showReceipt, setShowReceipt] = useState<{ voucherCode: string; total: number; totalFormatted?: string } | null>(null);
 
-  // Loyalty Workflow State
-  const [pendingReceipt, setPendingReceipt] = useState<{ voucherCode: string; total: number } | null>(null);
-  const [showTakePoints, setShowTakePoints] = useState(false);
-  const [showAccountCheck, setShowAccountCheck] = useState(false);
-  const [showBindPoints, setShowBindPoints] = useState(false);
+  // Loyalty State
   const [externalId, setExternalId] = useState("");
   const [pointLoading, setPointLoading] = useState(false);
+  const [pointsAwarded, setPointsAwarded] = useState(false);
 
   const loadProducts = useCallback(async () => {
     setIsLoading(true);
     try {
       const [pRes, cRes] = await Promise.all([productsApi.getAvailable(), categoriesApi.getAll()]);
-      if (pRes.isSuccess && pRes.data) setProducts(pRes.data);
+      if (pRes.isSuccess && pRes.data) {
+        setProducts(pRes.data.filter(p => p.isActive && !p.deleteFlag));
+      }
       if (cRes.isSuccess && cRes.data) setCategories(cRes.data);
     } catch { toast("error", "Failed to load products"); }
     finally { setIsLoading(false); }
@@ -81,43 +80,39 @@ export default function POSPage() {
     try {
       const res = await salesApi.create({ items: cart.map((c) => ({ productId: c.product.id, quantity: c.quantity })) });
       if (res.isSuccess && res.data) {
-        setPendingReceipt({ voucherCode: res.data.voucherCode, total: res.data.totalPrice });
+        setShowReceipt({ 
+          voucherCode: res.data.voucherCode, 
+          total: res.data.totalPrice,
+          totalFormatted: res.data.totalPriceFormatted 
+        });
         setCart([]);
+        setPointsAwarded(false);
+        setExternalId("");
         void loadProducts();
-        setShowTakePoints(true);
       } else toast("error", res.message);
     } catch { toast("error", "Checkout failed"); }
     finally { setCheckoutLoading(false); }
   };
 
-  const handleSkipPoints = () => {
-    setShowReceipt(pendingReceipt);
-    setPendingReceipt(null);
-    setShowTakePoints(false);
-  };
-
   const handleEarnPoints = async () => {
     if (!externalId.trim()) { toast("error", "Account ID is required"); return; }
-    if (!pendingReceipt) return;
+    if (!showReceipt) return;
 
     setPointLoading(true);
     try {
       const res = await pointsApi.earnPoints({
         externalUserId: externalId,
         eventKey: "PURCHASE",
-        eventValue: pendingReceipt.total,
-        referenceId: pendingReceipt.voucherCode,
-        description: `Purchase reward for voucher ${pendingReceipt.voucherCode}`,
-        mobile: "", // Optional in backend if externalId is used
+        eventValue: showReceipt.total,
+        referenceId: showReceipt.voucherCode,
+        description: `Purchase reward for voucher ${showReceipt.voucherCode}`,
+        mobile: "",
         email: "",
       });
 
       if (res.isSuccess) {
         toast("success", "Loyalty points awarded!");
-        setShowReceipt(pendingReceipt);
-        setPendingReceipt(null);
-        setShowBindPoints(false);
-        setExternalId("");
+        setPointsAwarded(true);
       } else {
         toast("error", res.message);
       }
@@ -159,7 +154,7 @@ export default function POSPage() {
 	                    <div className="mb-3 h-24 w-full rounded-xl bg-[var(--bg-secondary)] border border-[var(--border-primary)]" />
 	                  )}
 	                  <p className="text-sm font-semibold text-[var(--text-primary)] truncate">{p.name}</p>
-	                  <p className="text-lg font-bold text-[var(--accent-primary)] mt-1">MMK{p.price.toFixed(2)}</p>
+	                  <p className="text-lg font-bold text-[var(--accent-primary)] mt-1">{p.priceFormatted} MMK</p>
                   <div className="flex items-center justify-between mt-2">
                     <span className="text-xs text-[var(--text-tertiary)]">{p.stockQuantity} left</span>
                     {inCart && <Badge variant="primary">{inCart.quantity}x</Badge>}
@@ -187,7 +182,7 @@ export default function POSPage() {
               <div key={c.product.id} className="flex items-center gap-3 p-3 rounded-xl bg-[var(--bg-secondary)] border border-[var(--border-primary)]">
                 <div className="flex-1 min-w-0">
                   <p className="text-sm font-medium text-[var(--text-primary)] truncate">{c.product.name}</p>
-                  <p className="text-xs text-[var(--text-tertiary)]">MMK{c.product.price.toFixed(2)} each</p>
+                  <p className="text-xs text-[var(--text-tertiary)]">{c.product.priceFormatted} MMK each</p>
                 </div>
                 <div className="flex items-center gap-1.5">
                   <button onClick={() => updateQty(c.product.id, -1)} className="w-7 h-7 rounded-lg bg-[var(--bg-hover)] flex items-center justify-center text-[var(--text-secondary)] hover:bg-[var(--bg-active)] transition-colors cursor-pointer"><Minus size={14} /></button>
@@ -195,7 +190,7 @@ export default function POSPage() {
                   <button onClick={() => updateQty(c.product.id, 1)} className="w-7 h-7 rounded-lg bg-[var(--bg-hover)] flex items-center justify-center text-[var(--text-secondary)] hover:bg-[var(--bg-active)] transition-colors cursor-pointer"><Plus size={14} /></button>
                 </div>
                 <div className="text-right w-16">
-                  <p className="text-sm font-semibold text-[var(--text-primary)]">MMK{(c.product.price * c.quantity).toFixed(2)}</p>
+                  <p className="text-sm font-semibold text-[var(--text-primary)]">{(c.product.price * c.quantity).toLocaleString()} MMK</p>
                 </div>
                 <button onClick={() => removeFromCart(c.product.id)} className="p-1 text-[var(--text-tertiary)] hover:text-[var(--accent-danger)] transition-colors cursor-pointer"><X size={14} /></button>
               </div>
@@ -205,7 +200,7 @@ export default function POSPage() {
           <div className="p-4 border-t border-[var(--border-primary)] space-y-3">
             <div className="flex items-center justify-between">
               <span className="text-sm text-[var(--text-secondary)]">Total</span>
-              <span className="text-xl font-bold text-[var(--text-primary)]">MMK{cartTotal.toFixed(2)}</span>
+              <span className="text-xl font-bold text-[var(--text-primary)]">{cartTotal.toLocaleString()} MMK</span>
             </div>
             <Button className="w-full" size="lg" onClick={handleCheckout} isLoading={checkoutLoading} disabled={cart.length === 0} icon={<CheckCircle size={18} />}>
               Checkout
@@ -213,64 +208,61 @@ export default function POSPage() {
           </div>
         </Card>
 
-        {/* Receipt Modal */}
+        {/* Unified Success & Loyalty Modal */}
         <Modal isOpen={!!showReceipt} onClose={() => setShowReceipt(null)} title="Sale Complete!" size="sm">
           {showReceipt && (
-            <div className="text-center space-y-4">
-              <div className="w-16 h-16 rounded-full bg-[var(--accent-success-soft)] flex items-center justify-center mx-auto">
-                <CheckCircle size={32} className="text-[var(--accent-success)]" />
+            <div className="space-y-6">
+              <div className="text-center space-y-4">
+                <div className="w-16 h-16 rounded-full bg-[var(--accent-success-soft)] flex items-center justify-center mx-auto">
+                  <CheckCircle size={32} className="text-[var(--accent-success)]" />
+                </div>
+                <div>
+                  <p className="text-sm text-[var(--text-secondary)]">Voucher Code</p>
+                  <p className="text-lg font-bold font-mono text-[var(--accent-primary)] mt-1">{showReceipt.voucherCode}</p>
+                </div>
+                <div>
+                  <p className="text-sm text-[var(--text-secondary)]">Total Amount</p>
+                  <p className="text-2xl font-bold text-[var(--text-primary)]">{showReceipt.totalFormatted || showReceipt.total.toLocaleString()} MMK</p>
+                </div>
               </div>
-              <div>
-                <p className="text-sm text-[var(--text-secondary)]">Voucher Code</p>
-                <p className="text-lg font-bold font-mono text-[var(--accent-primary)] mt-1">{showReceipt.voucherCode}</p>
-              </div>
-              <div>
-                <p className="text-sm text-[var(--text-secondary)]">Total Amount</p>
-                <p className="text-2xl font-bold text-[var(--text-primary)]">MMK{showReceipt.total.toFixed(2)}</p>
-              </div>
-              <Button className="w-full" onClick={() => setShowReceipt(null)}>Done</Button>
+
+              {!pointsAwarded ? (
+                <div className="pt-4 border-t border-[var(--border-primary)] space-y-3">
+                  <div className="flex items-center gap-2 mb-1">
+                    <Gift size={16} className="text-[var(--accent-warning)]" />
+                    <span className="text-sm font-semibold text-[var(--text-primary)]">Award Loyalty Points</span>
+                  </div>
+                  <div className="flex gap-2">
+                    <div className="flex-1">
+                      <Input 
+                        placeholder="Customer ID (Phone)" 
+                        value={externalId} 
+                        onChange={(e) => setExternalId(e.target.value)} 
+                      />
+                    </div>
+                    <Button 
+                      size="sm" 
+                      onClick={handleEarnPoints} 
+                      isLoading={pointLoading}
+                      disabled={!externalId.trim()}
+                    >
+                      Award
+                    </Button>
+                  </div>
+                  <p className="text-[10px] text-[var(--text-tertiary)]">Enter phone number to award points for this purchase.</p>
+                </div>
+              ) : (
+                <div className="pt-4 border-t border-[var(--border-primary)] flex items-center justify-center gap-2 text-[var(--accent-success)]">
+                  <CheckCircle size={16} />
+                  <span className="text-sm font-medium">Points Awarded Successfully!</span>
+                </div>
+              )}
+
+              <Button className="w-full mt-2" variant={pointsAwarded ? "primary" : "secondary"} onClick={() => setShowReceipt(null)}>
+                Close
+              </Button>
             </div>
           )}
-        </Modal>
-
-        {/* Loyalty Step 1: Take Points */}
-        <Modal isOpen={showTakePoints} onClose={handleSkipPoints} title="Loyalty Points" size="sm">
-          <div className="text-center space-y-6">
-            <div className="w-16 h-16 rounded-full bg-[var(--accent-warning-soft)] flex items-center justify-center mx-auto">
-              <Gift size={32} className="text-[var(--accent-warning)]" />
-            </div>
-            <p className="text-[var(--text-primary)] font-medium">Would you like to take loyalty points for this purchase?</p>
-            <div className="flex gap-3">
-              <Button variant="secondary" className="flex-1" onClick={handleSkipPoints}>No</Button>
-              <Button className="flex-1" onClick={() => { setShowTakePoints(false); setShowAccountCheck(true); }}>Yes</Button>
-            </div>
-          </div>
-        </Modal>
-
-        {/* Loyalty Step 2: Account Check */}
-        <Modal isOpen={showAccountCheck} onClose={handleSkipPoints} title="Customer Account" size="sm">
-          <div className="text-center space-y-6">
-            <div className="w-16 h-16 rounded-full bg-[var(--accent-info-soft)] flex items-center justify-center mx-auto">
-              <UserCheck size={32} className="text-[var(--accent-info)]" />
-            </div>
-            <p className="text-[var(--text-primary)] font-medium">Does the customer already have a loyalty account?</p>
-            <div className="flex gap-3">
-              <Button variant="secondary" className="flex-1" onClick={() => router.push("/users")}>No (Create)</Button>
-              <Button className="flex-1" onClick={() => { setShowAccountCheck(false); setShowBindPoints(true); }}>Yes</Button>
-            </div>
-          </div>
-        </Modal>
-
-        {/* Loyalty Step 3: Bind Points */}
-        <Modal isOpen={showBindPoints} onClose={handleSkipPoints} title="Award Points" size="sm">
-          <div className="space-y-4">
-            <p className="text-sm text-[var(--text-secondary)]">Enter Customer Account ID (Phone/External ID) to award points for this sale.</p>
-            <Input label="Account ID" placeholder="Enter ID" value={externalId} onChange={(e) => setExternalId(e.target.value)} icon={<Search size={16} />} />
-            <div className="flex gap-3 pt-2">
-              <Button variant="secondary" className="flex-1" onClick={handleSkipPoints}>Cancel</Button>
-              <Button className="flex-1" onClick={handleEarnPoints} isLoading={pointLoading}>Award Points</Button>
-            </div>
-          </div>
         </Modal>
       </div>
     </AnimatedPage>

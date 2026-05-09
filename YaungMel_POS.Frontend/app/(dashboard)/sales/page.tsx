@@ -151,7 +151,7 @@ export default function SalesPage() {
                         <td className="py-3 px-4 text-sm text-[var(--text-secondary)]">#{s.id}</td>
                         <td className="py-3 px-4"><Badge variant="primary"><span className="font-mono">{s.voucherCode}</span></Badge></td>
                         <td className="py-3 px-4 text-sm text-[var(--text-primary)]">{s.saleItems.length} items</td>
-                        <td className="py-3 px-4"><span className="text-sm font-bold font-mono text-[var(--text-primary)]">MMK{s.totalPrice.toFixed(2)}</span></td>
+                        <td className="py-3 px-4"><span className="text-sm font-bold font-mono text-[var(--text-primary)]">{s.totalPriceFormatted} MMK</span></td>
                         <td className="py-3 px-4 text-right">{expandedId === s.id ? <ChevronUp size={16} className="text-[var(--text-tertiary)]" /> : <ChevronDown size={16} className="text-[var(--text-tertiary)]" />}</td>
                       </tr>
                       {expandedId === s.id && (
@@ -161,7 +161,7 @@ export default function SalesPage() {
                               {s.saleItems.map((item, idx) => (
                                 <div key={idx} className="flex justify-between text-sm">
                                   <span className="text-[var(--text-secondary)]">{item.productName} × {item.quantity}</span>
-                                  <span className="font-mono text-[var(--text-primary)]">MMK{(item.price * item.quantity).toFixed(2)}</span>
+                                  <span className="font-mono text-[var(--text-primary)]">{(item.price * item.quantity).toLocaleString()} MMK</span>
                                 </div>
                               ))}
                             </div>
@@ -179,11 +179,11 @@ export default function SalesPage() {
         <Modal isOpen={!!selectedSale} onClose={() => setSelectedSale(null)} title={`Sale ${selectedSale?.voucherCode}`} size="md">
           {selectedSale && (
             <div className="space-y-4">
-              <p className="text-2xl font-bold text-[var(--text-primary)]">MMK{selectedSale.totalPrice.toFixed(2)}</p>
+              <p className="text-2xl font-bold text-[var(--text-primary)]">{selectedSale.totalPriceFormatted} MMK</p>
               {selectedSale.saleItems.map((item, i) => (
                 <div key={i} className="flex justify-between py-2 border-b border-[var(--border-primary)] last:border-0">
                   <span className="text-sm text-[var(--text-secondary)]">{item.productName} × {item.quantity}</span>
-                  <span className="text-sm font-mono text-[var(--text-primary)]">MMK{(item.price * item.quantity).toFixed(2)}</span>
+                  <span className="text-sm font-mono text-[var(--text-primary)]">{(item.price * item.quantity).toLocaleString()} MMK</span>
                 </div>
               ))}
             </div>

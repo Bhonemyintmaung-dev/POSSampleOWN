@@ -100,7 +100,7 @@ export default function InventoryPage() {
                   {filtered.map((p) => (
                     <tr key={p.id} className="border-b border-[var(--border-primary)] last:border-0 hover:bg-[var(--bg-hover)] transition-colors">
                       <td className="py-3 px-4 text-sm font-medium text-[var(--text-primary)]">{p.name}</td>
-                      <td className="py-3 px-4 text-sm font-mono text-[var(--text-primary)]">MMK{p.price.toFixed(2)}</td>
+                      <td className="py-3 px-4 text-sm font-mono text-[var(--text-primary)]">{p.priceFormatted} MMK</td>
                       <td className="py-3 px-4">{stockBadge(p.stockQuantity)}</td>
                       <td className="py-3 px-4"><Badge variant={p.isActive ? "success" : "danger"}>{p.isActive ? "Active" : "Inactive"}</Badge></td>
                       <td className="py-3 px-4 text-right">
@@ -135,7 +135,7 @@ export default function InventoryPage() {
 
         <Modal isOpen={!!priceModal} onClose={() => setPriceModal(null)} title={`Update Price — ${priceModal?.name}`} size="sm">
           <div className="space-y-4">
-            <p className="text-sm text-[var(--text-secondary)]">Current price: <strong>MMK{priceModal?.price.toFixed(2)}</strong></p>
+            <p className="text-sm text-[var(--text-secondary)]">Current price: <strong>{priceModal?.priceFormatted} MMK</strong></p>
             <Input label="New Price" type="number" value={newPrice} onChange={(e) => setNewPrice(e.target.value)} placeholder="0.00" />
             <div className="flex justify-end gap-3">
               <Button variant="secondary" onClick={() => setPriceModal(null)}>Cancel</Button>

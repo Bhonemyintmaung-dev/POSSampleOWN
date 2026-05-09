@@ -91,8 +91,8 @@ function AdminDashboard() {
     {
       label: "Total Revenue",
       value: overview
-        ? `MMK${overview.totalRevenue.toLocaleString("en-US", { minimumFractionDigits: 2 })}`
-        : "MMK0.00",
+        ? `${overview.totalRevenue.toLocaleString()} MMK`
+        : "0 MMK",
       icon: DollarSign,
       color: "from-blue-500 to-cyan-500",
     },
@@ -106,8 +106,8 @@ function AdminDashboard() {
       label: "Avg. per Sale",
       value:
         overview && overview.totalSales > 0
-          ? `MMK${(overview.totalRevenue / overview.totalSales).toFixed(2)}`
-          : "MMK0.00",
+          ? `${(overview.totalRevenue / overview.totalSales).toLocaleString()} MMK`
+          : "0 MMK",
       icon: TrendingUp,
       color: "from-emerald-500 to-teal-500",
     },
@@ -329,7 +329,7 @@ function AdminDashboard() {
                     </td>
                     <td className="py-3 px-4 text-right">
                       <span className="text-sm text-[var(--text-primary)] font-mono">
-                        MMK{product.totalRevenue.toLocaleString("en-US", { minimumFractionDigits: 2 })}
+                        {product.totalRevenue.toLocaleString()} MMK
                       </span>
                     </td>
                     <td className="py-3 px-4 text-right">

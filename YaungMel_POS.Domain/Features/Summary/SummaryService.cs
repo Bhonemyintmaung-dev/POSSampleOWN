@@ -85,6 +85,7 @@ public class SummaryService : ISummaryService
                 Date = today,
                 TotalSale = totalSale,
                 TotalAmount = totalAmount,
+                TotalAmountFormatted = totalAmount.ToString("N0"),
                 TopSaleProductName = topProduct?.ProductName
             };
 
@@ -118,6 +119,7 @@ public class SummaryService : ISummaryService
                     Date = s.Date,
                     TotalSale = s.TotalSale,
                     TotalAmount = s.TotalAmount,
+                    TotalAmountFormatted = s.TotalAmount.ToString("N0"),
                     TopSaleProductName = s.TopSaleProduct != null ? s.TopSaleProduct.Name : null
                 })
                 .ToListAsync();
@@ -165,6 +167,7 @@ public class SummaryService : ISummaryService
                     Date = summary.Date,
                     TotalSale = summary.TotalSale,
                     TotalAmount = summary.TotalAmount,
+                    TotalAmountFormatted = summary.TotalAmount.ToString("N0"),
                     TopSaleProductName = summary.TopSaleProduct?.Name
                 },
                 Sales = sales.Select(s => new SaleDTO
@@ -177,6 +180,7 @@ public class SummaryService : ISummaryService
                         ProductName = si.Product?.Name ?? string.Empty,
                         Quantity = si.Quantity,
                         Price = si.Price,
+                        PriceFormatted = si.Price.ToString("N0")
                     }).ToList()
                 }).ToList()
             };
@@ -207,6 +211,7 @@ public class SummaryService : ISummaryService
                     Date = s.Date,
                     TotalSale = s.TotalSale,
                     TotalAmount = s.TotalAmount,
+                    TotalAmountFormatted = s.TotalAmount.ToString("N0"),
                     TopSaleProductName = s.TopSaleProduct != null ? s.TopSaleProduct.Name : null
                 })
                 .ToListAsync();
