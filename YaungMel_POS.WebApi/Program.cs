@@ -1,5 +1,5 @@
 using Hangfire;
-using Hangfire.PostgreSql;
+using Hangfire.EntityFrameworkCore;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
@@ -100,15 +100,12 @@ try
     });
 
 
-    //builder.Services.AddHangfire(config =>
-    //{
-    //    config.UsePostgreSqlStorage(options =>
-    //    {
-    //        options.UseNpgsqlConnection(builder.Configuration.GetConnectionString("HangfireConnection"));
-    //    });
-    //});
+    builder.Services.AddHangfire(config =>
+    {
+        config.UseEFCoreStorage(options => options.UseInMemoryDatabase("HangfireDb"));
+    });
 
-    //builder.Services.AddHangfireServer();
+    builder.Services.AddHangfireServer();
 
     var app = builder.Build();
 
@@ -136,11 +133,11 @@ try
     app.UseAuthorization();
     app.MapControllers();
 
-    //app.UseHangfireDashboard("/hangfire");
-    //RecurringJob.AddOrUpdate<ISummaryService>(
-    //"create-daily-summary",
-    //service => service.CreateSummaryAsync(),
-    //"59 23 * * *");
+    app.UseHangfireDashboard("/hangfire");
+    RecurringJob.AddOrUpdate<ISummaryService>(
+    "create-daily-summary",
+    service => service.CreateSummaryAsync(),
+    "59 23 * * *");
 
     app.Run();
 }
