@@ -93,7 +93,10 @@ try
     {
         options.AddPolicy("AllowAll", builder =>
         {
-            builder.SetIsOriginAllowed(origin => true)
+            builder.SetIsOriginAllowed(origin => 
+                    origin.EndsWith(".vercel.app") || 
+                    origin.StartsWith("http://localhost") || 
+                    origin.StartsWith("https://localhost"))
                    .AllowAnyMethod()
                    .AllowAnyHeader()
                    .AllowCredentials();
