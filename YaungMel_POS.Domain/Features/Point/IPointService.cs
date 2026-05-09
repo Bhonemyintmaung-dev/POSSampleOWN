@@ -1,4 +1,4 @@
-﻿using YaungMel_POS.Domain.DTOs;
+using YaungMel_POS.Domain.DTOs;
 using YaungMel_POS.Shared;
 using YaungMel_POS.Shared.Responses;
 
@@ -16,5 +16,8 @@ namespace YaungMel_POS.Domain.Features.Point
         Task<Result<List<PointHistoryResDTO>>> GetPointHistoryAsync(string accountId);
         Task<Result<CheckBalanceResDTO>> GetUserBalanceAsync(CheckBalanceReqDTO request);
         Task<Result<bool>> UpdateRedemptionStatusAsync(string redemptionId, RedemptionStatus status);
+        Task<Result<CreateRewardResDTO>> CreateRewardAsync(CreateRewardReqDTO request);
+        Task<Result<AvailableRewardResDTO>> UpdateRewardAsync(string id, UpdateRewardReqDTO request);
+        Task<Result<bool>> DeleteRewardAsync(string id);
     }
 }

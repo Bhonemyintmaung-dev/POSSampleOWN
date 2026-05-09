@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -37,5 +37,14 @@ public class DisabledPointService : IPointService
         => Task.FromResult(Result<List<PendingRedemptionResDTO>>.SystemError("Point system is disabled"));
 
     public Task<Result<bool>> UpdateRedemptionStatusAsync(string redemptionId, RedemptionStatus status)
+        => Task.FromResult(Result<bool>.SystemError("Point system is disabled"));
+
+    public Task<Result<CreateRewardResDTO>> CreateRewardAsync(CreateRewardReqDTO request)
+        => Task.FromResult(Result<CreateRewardResDTO>.SystemError("Point system is disabled"));
+
+    public Task<Result<AvailableRewardResDTO>> UpdateRewardAsync(string id, UpdateRewardReqDTO request)
+        => Task.FromResult(Result<AvailableRewardResDTO>.SystemError("Point system is disabled"));
+
+    public Task<Result<bool>> DeleteRewardAsync(string id)
         => Task.FromResult(Result<bool>.SystemError("Point system is disabled"));
 }

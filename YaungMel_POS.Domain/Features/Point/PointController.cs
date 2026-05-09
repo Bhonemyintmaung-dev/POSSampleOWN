@@ -129,4 +129,30 @@ public class PointController : ControllerBase
         var result = await _service.UpdateRedemptionStatusAsync(id, status);
         return Ok(result);
     }
+    [AllowAnonymous]
+    [HttpPost("rewards")]
+    public async Task<IActionResult> CreateReward([FromBody] CreateRewardReqDTO request)
+    {
+        if (!ModelState.IsValid) return BadRequest(Result<object>.SystemError("Invalid request data."));
+
+        var result = await _service.CreateRewardAsync(request);
+        return Ok(result);
+    }
+    [AllowAnonymous]
+    [HttpPut("rewards/{id}")]
+    public async Task<IActionResult> UpdateReward(string id, [FromBody] UpdateRewardReqDTO request)
+    {
+        if (!ModelState.IsValid) return BadRequest(Result<object>.SystemError("Invalid request data."));
+
+        var result = await _service.UpdateRewardAsync(id, request);
+        return Ok(result);
+    }
+
+    [AllowAnonymous]
+    [HttpDelete("rewards/{id}")]
+    public async Task<IActionResult> DeleteReward(string id)
+    {
+        var result = await _service.DeleteRewardAsync(id);
+        return Ok(result);
+    }
 }

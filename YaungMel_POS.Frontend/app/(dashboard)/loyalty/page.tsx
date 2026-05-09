@@ -12,7 +12,7 @@ import { Modal } from "@/components/ui/Modal";
 import { SkeletonTable } from "@/components/ui/Skeleton";
 import { AnimatedPage } from "@/components/ui/AnimatedPage";
 import { toast } from "@/components/ui/Toast";
-import { Gift, Search as SearchIcon, UserCheck, Coins, Package, CheckCircle, Shield, AlertTriangle, ArrowRight, Users, LayoutGrid, List, ChevronLeft, ChevronRight, Mail, Phone, Calendar } from "lucide-react";
+import { Gift, Search as SearchIcon, UserCheck, Coins, Package, CheckCircle, Shield, AlertTriangle, ArrowRight, Users, LayoutGrid, List, ChevronLeft, ChevronRight, Mail, Phone, Calendar, Trophy } from "lucide-react";
 
 export default function LoyaltyPage() {
   const { isAdmin, isStaff } = useAuth();
@@ -178,29 +178,42 @@ export default function LoyaltyPage() {
             <p className="text-sm text-[var(--text-secondary)] mt-1">Manage customer rewards and view loyalty accounts.</p>
           </div>
           
-          <div className="flex p-1 bg-[var(--bg-secondary)] rounded-xl border border-[var(--border-primary)] w-fit">
-            <button
-              onClick={() => setActiveTab("claim")}
-              className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${
-                activeTab === "claim" 
-                ? "bg-[var(--bg-card)] text-[var(--accent-primary)] shadow-sm border border-[var(--border-primary)]" 
-                : "text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
-              }`}
-            >
-              <Gift size={16} />
-              Claim Rewards
-            </button>
-            <button
-              onClick={() => setActiveTab("accounts")}
-              className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${
-                activeTab === "accounts" 
-                ? "bg-[var(--bg-card)] text-[var(--accent-primary)] shadow-sm border border-[var(--border-primary)]" 
-                : "text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
-              }`}
-            >
-              <Users size={16} />
-              Accounts
-            </button>
+          <div className="flex items-center gap-3">
+            {isAdmin && (
+              <Button 
+                variant="secondary" 
+                size="sm" 
+                onClick={() => window.location.href = "/rewards"}
+                icon={<Trophy size={14} />}
+                className="hidden sm:flex"
+              >
+                Manage Rewards
+              </Button>
+            )}
+            <div className="flex p-1 bg-[var(--bg-secondary)] rounded-xl border border-[var(--border-primary)] w-fit">
+              <button
+                onClick={() => setActiveTab("claim")}
+                className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${
+                  activeTab === "claim" 
+                  ? "bg-[var(--bg-card)] text-[var(--accent-primary)] shadow-sm border border-[var(--border-primary)]" 
+                  : "text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
+                }`}
+              >
+                <Gift size={16} />
+                Claim Rewards
+              </button>
+              <button
+                onClick={() => setActiveTab("accounts")}
+                className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${
+                  activeTab === "accounts" 
+                  ? "bg-[var(--bg-card)] text-[var(--accent-primary)] shadow-sm border border-[var(--border-primary)]" 
+                  : "text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
+                }`}
+              >
+                <Users size={16} />
+                Accounts
+              </button>
+            </div>
           </div>
         </div>
 

@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net.Http.Json;
@@ -306,6 +306,49 @@ public class PointService : IPointService
         catch (Exception ex)
         {
             return Result<CreateRewardResDTO>.SystemError($"Internal Error: {ex.Message}");
+        }
+    }
+    public async Task<Result<AvailableRewardResDTO>> UpdateRewardAsync(string id, UpdateRewardReqDTO request)
+    {
+        try
+        {
+            var response = await _client.PutAsJsonAsync($"rewards/{id}", request);
+
+            if (response.IsSuccessStatusCode)
+            {
+                var result = await response.Content.ReadFromJsonAsync<AvailableRewardResDTO>();
+
+                return result != null
+                    ? Result<AvailableRewardResDTO>.Success(result, "Reward updated successfully.")
+                    : Result<AvailableRewardResDTO>.SystemError("Failed to parse reward data.");
+            }
+
+            var errorContent = await response.Content.ReadAsStringAsync();
+            return Result<AvailableRewardResDTO>.SystemError($"Reward Update Failed: {response.StatusCode} - {errorContent}");
+        }
+        catch (Exception ex)
+        {
+            return Result<AvailableRewardResDTO>.SystemError($"Internal Error: {ex.Message}");
+        }
+    }
+
+    public async Task<Result<bool>> DeleteRewardAsync(string id)
+    {
+        try
+        {
+            var response = await _client.DeleteAsync($"rewards/{id}");
+
+            if (response.IsSuccessStatusCode)
+            {
+                return Result<bool>.Success(true, "Reward deleted successfully.");
+            }
+
+            var errorContent = await response.Content.ReadAsStringAsync();
+            return Result<bool>.SystemError($"Reward Deletion Failed: {response.StatusCode} - {errorContent}");
+        }
+        catch (Exception ex)
+        {
+            return Result<bool>.SystemError($"Internal Error: {ex.Message}");
         }
     }
 }
