@@ -8,40 +8,80 @@ using Microsoft.AspNetCore.WebUtilities;
 using YaungMel_POS.Domain.DTOs;
 using YaungMel_POS.Shared;
 using YaungMel_POS.Shared.Responses;
+using System.Text.Json;
+using System.Text.Json.Serialization;
 
 namespace YaungMel_POS.Domain.Features.Point;
 
 public class PointService : IPointService
 {
     private readonly HttpClient _client;
+    private readonly JsonSerializerOptions _jsonOptions = new JsonSerializerOptions
+    {
+        PropertyNameCaseInsensitive = true,
+        ReferenceHandler = ReferenceHandler.IgnoreCycles
+    };
 
     public PointService(HttpClient clitent)
     {
         _client = clitent;
     }
 
-    // Helper to handle both raw T and Result<T> wrapped responses from the external API
     private async Task<T?> ReadResponseAsync<T>(HttpResponseMessage response)
     {
         var content = await response.Content.ReadAsStringAsync();
+        if (string.IsNullOrWhiteSpace(content)) return default;
+
         try
         {
-            // Try to parse as the raw type first
-            return await response.Content.ReadFromJsonAsync<T>();
+            // 1. Try to parse as the raw type first
+            return JsonSerializer.Deserialize<T>(content, _jsonOptions);
         }
         catch
         {
             try
             {
-                // If it fails, it might be wrapped in a Result<T> structure
-                var wrapped = await response.Content.ReadFromJsonAsync<Result<T>>();
-                return wrapped != null ? wrapped.Data : default;
+                // 2. Try as Result<T> wrapper
+                var wrapped = JsonSerializer.Deserialize<ResultWrapper<T>>(content, _jsonOptions);
+                if (wrapped != null && wrapped.IsSuccess && wrapped.Data != null)
+                {
+                    return wrapped.Data;
+                }
             }
-            catch
+            catch { }
+
+            // 3. If T is a List<X>, it might be an object like { "items": [...] } or { "data": [...] }
+            if (typeof(T).IsGenericType && (typeof(T).GetGenericTypeDefinition() == typeof(List<>) || typeof(T).GetGenericTypeDefinition() == typeof(IEnumerable<>)))
             {
-                return default;
+                try
+                {
+                    using var doc = JsonDocument.Parse(content);
+                    var root = doc.RootElement;
+                    if (root.ValueKind == JsonValueKind.Object)
+                    {
+                        if (root.TryGetProperty("items", out var items))
+                        {
+                            return items.Deserialize<T>(_jsonOptions);
+                        }
+                        if (root.TryGetProperty("data", out var data))
+                        {
+                            return data.Deserialize<T>(_jsonOptions);
+                        }
+                    }
+                }
+                catch { }
             }
+
+            return default;
         }
+    }
+
+    // Helper class for parsing potential Result wrappers
+    private class ResultWrapper<T>
+    {
+        public bool IsSuccess { get; set; }
+        public bool Success { get; set; } // Some APIs use "success" instead of "isSuccess"
+        public T? Data { get; set; }
     }
 
     #region Account
@@ -197,8 +237,6 @@ public class PointService : IPointService
     {
         try
         {
-            // The history API might expect the account internal ID or the external user ID.
-            // Based on how lookup works, we try to get it from the account.
             var response = await _client.GetAsync($"accounts/{accountId}/history");
 
             if (response.IsSuccessStatusCode)
@@ -226,7 +264,6 @@ public class PointService : IPointService
             if (response.IsSuccessStatusCode)
             {
                 var result = await ReadResponseAsync<ClaimRewardResDTO>(response);
-                // Fallback for APIs that only return {"success": true}
                 if (result == null)
                 {
                     result = new ClaimRewardResDTO { Status = "Pending" };
