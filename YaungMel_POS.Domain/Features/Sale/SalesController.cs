@@ -5,6 +5,7 @@ using System.Threading.Tasks;
 using System.Security.Claims;
 using YaungMel_POS.Domain.DTOs;
 using YaungMel_POS.Shared.Responses;
+using System;
 
 
 namespace YaungMel_POS.Domain.Features.Sale
@@ -23,8 +24,15 @@ namespace YaungMel_POS.Domain.Features.Sale
 
         private int GetCurrentUserId()
         {
-            var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier);
-            return userIdClaim != null ? int.Parse(userIdClaim.Value) : 0;
+            try
+            {
+                var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier);
+                return userIdClaim != null ? int.Parse(userIdClaim.Value) : 0;
+            }
+            catch
+            {
+                return 0;
+            }
         }
 
         // GET: api/sales/paged?pageNo=1&pageSize=10
@@ -52,20 +60,32 @@ namespace YaungMel_POS.Domain.Features.Sale
         [HttpPost]
         public async Task<IActionResult> Create([FromBody] CreateSaleDTO createRequest)
         {
-            if (!ModelState.IsValid)
-                return BadRequest(Result<object>.SystemError("Invalid sale data."));
-
-            var result = await _service.CreateSaleAsync(createRequest, GetCurrentUserId());
-
-            if (!result.IsSuccess)
+            try
             {
-                return BadRequest(result);
-            }
+                if (!ModelState.IsValid)
+                    return BadRequest(Result<object>.SystemError("Invalid sale data."));
 
-            return CreatedAtAction(
-                nameof(GetByVoucherCode),
-                new { voucherCode = result.Data!.VoucherCode },
-                result);
+                var result = await _service.CreateSaleAsync(createRequest, GetCurrentUserId());
+
+                if (!result.IsSuccess)
+                {
+                    return BadRequest(result);
+                }
+
+                if (result.Data == null)
+                {
+                    return BadRequest(Result<object>.SystemError("Sale created but no data returned."));
+                }
+
+                return CreatedAtAction(
+                    nameof(GetByVoucherCode),
+                    new { voucherCode = result.Data.VoucherCode },
+                    result);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, Result<object>.SystemError($"Internal Server Error: {ex.Message}"));
+            }
         }
     }
 }

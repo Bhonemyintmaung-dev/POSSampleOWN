@@ -32,9 +32,16 @@ public class SaleService : ISaleService
         if (reqSale.Items == null || !reqSale.Items.Any())
             return Result<SaleDTO>.SystemError("Sale must contain at least one item.");
 
-        using var transaction = await _db.Database.BeginTransactionAsync();
+        // Move transaction inside try to handle provider-specific errors (like InMemory DB not supporting transactions)
+        Microsoft.EntityFrameworkCore.Storage.IDbContextTransaction? transaction = null;
         try
         {
+            // Only start transaction if not using In-Memory DB (which doesn't support them)
+            if (!_db.Database.IsInMemory())
+            {
+                transaction = await _db.Database.BeginTransactionAsync();
+            }
+
             var productIds = reqSale.Items.Select(x => x.ProductId).Distinct().ToList();
 
             var products = await _db.Products
@@ -96,7 +103,10 @@ public class SaleService : ISaleService
                 })
             }, userId, "Sale");
 
-            await transaction.CommitAsync();
+            if (transaction != null)
+            {
+                await transaction.CommitAsync();
+            }
 
             var resModel = new SaleDTO
             {
@@ -107,7 +117,7 @@ public class SaleService : ISaleService
                 SaleItems = saveModel.SaleItems.Select(x => new SaleItemDTO
                 {
                     // Safely get the name from the dictionary we built earlier
-                    ProductName = products[x.ProductId].Name,
+                    ProductName = products.ContainsKey(x.ProductId) ? products[x.ProductId].Name : "Unknown Product",
                     Quantity = x.Quantity,
                     Price = x.Price,
                     PriceFormatted = x.Price.ToString("N0")
@@ -118,8 +128,18 @@ public class SaleService : ISaleService
         }
         catch (Exception ex)
         {
-            await transaction.RollbackAsync();
+            if (transaction != null)
+            {
+                await transaction.RollbackAsync();
+            }
             return Result<SaleDTO>.SystemError($"Error: {ex.Message}");
+        }
+        finally
+        {
+            if (transaction != null)
+            {
+                await transaction.DisposeAsync();
+            }
         }
     }
     #endregion

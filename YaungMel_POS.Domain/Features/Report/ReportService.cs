@@ -109,11 +109,11 @@ namespace YaungMel_POS.Domain.Features.Report
                     vertical-align: top;
                     word-wrap: break-word;
                 }
-                .col-doc { width: 120px; }
+                .col-doc { width: 110px; }
                 .col-desc { width: auto; }
-                .col-qty { width: 40px; text-align: center; }
-                .col-price { width: 90px; text-align: right; }
-                .col-total { width: 90px; text-align: right; }
+                .col-qty { width: 60px; text-align: center; padding-right: 15px; }
+                .col-price { width: 100px; text-align: right; }
+                .col-total { width: 110px; text-align: right; }
                 
                 .data-table th {
                     border-top: 1px solid #000;
@@ -201,15 +201,15 @@ namespace YaungMel_POS.Domain.Features.Report
                     sb.Append($"<td class='col-desc'>{item.ProductName}</td>");
                     sb.Append($"<td class='col-qty'>{item.Quantity}</td>");
                     sb.Append($"<td class='col-price'>{item.Price:N0}</td>");
-                    sb.Append($"<td class='col-total'>{(item.Price * item.Quantity):N0}</td>");
+                    sb.Append($"<td class='col-total'>{(item.Price * item.Quantity):N0} MMK</td>");
                     sb.Append("</tr>");
                 }
 
                 // Subtotal for the voucher
                 sb.Append($@"
                 <tr>
-                    <td colspan='4' class='text-right col-desc' style='font-size: 8pt; color: #666; font-style: italic; width: calc(100% - 90px);'>Voucher Subtotal:</td>
-                    <td class='col-total bold' style='font-size: 8pt; border-bottom: 1px solid #000;'>{sale.TotalPrice:N0}</td>
+                    <td colspan='4' class='text-right col-desc' style='font-size: 8pt; color: #666; font-style: italic; width: calc(100% - 110px);'>Voucher Subtotal:</td>
+                    <td class='col-total bold' style='font-size: 8pt; border-bottom: 1px solid #000;'>{sale.TotalPrice:N0} MMK</td>
                 </tr>");
                 sb.Append("</tbody></table>");
                 sb.Append("</div>");
@@ -220,8 +220,8 @@ namespace YaungMel_POS.Domain.Features.Report
             <table class='data-table'>
                 <tbody>
                 <tr class='total-row'>
-                    <td colspan='4' class='text-right' style='width: calc(100% - 90px);'>GRAND TOTAL (MMK)</td>
-                    <td class='text-right col-total'>{detail.Summary.TotalAmount:N0}</td>
+                    <td colspan='4' class='text-right' style='width: calc(100% - 110px);'>GRAND TOTAL</td>
+                    <td class='text-right col-total'>{detail.Summary.TotalAmount:N0} MMK</td>
                 </tr>
                 </tbody>
             </table>");
@@ -284,7 +284,7 @@ namespace YaungMel_POS.Domain.Features.Report
                 sb.Append($"<td>{summary.Date:dd/MM/yyyy}</td>");
                 sb.Append($"<td class='col-desc'>{summary.TopSaleProductName ?? "N/A"}</td>");
                 sb.Append($"<td class='col-qty'>{summary.TotalSale}</td>");
-                sb.Append($"<td class='col-total'>{summary.TotalAmount:N0}</td>");
+                sb.Append($"<td class='col-total'>{summary.TotalAmount:N0} MMK</td>");
                 sb.Append("</tr>");
 
                 grandTotal += summary.TotalAmount;
@@ -296,7 +296,7 @@ namespace YaungMel_POS.Domain.Features.Report
                 <tr class='total-row'>
                     <td colspan='2' class='text-right'>TOTAL</td>
                     <td class='col-qty'>{totalSalesCount}</td>
-                    <td class='col-total'>{grandTotal:N0}</td>
+                    <td class='col-total'>{grandTotal:N0} MMK</td>
                 </tr>");
 
             sb.Append("</tbody></table>");
